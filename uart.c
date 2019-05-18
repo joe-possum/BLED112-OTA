@@ -22,7 +22,6 @@
 //
 
 #include <stdio.h>
-
 #include "uart.h"
 
 #ifdef PLATFORM_WIN
@@ -207,7 +206,7 @@ int uart_rx(int len,unsigned char *data,int timeout_ms)
     timeouts.WriteTotalTimeoutMultiplier=0;
     timeouts.WriteTotalTimeoutConstant=0;
 
-    SetCommTimeouts(
+    if(0)SetCommTimeouts(
             serial_handle,
             &timeouts
     );
@@ -244,6 +243,9 @@ int uart_rx(int len,unsigned char *data,int timeout_ms)
 #include <termios.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
 
 int serial_handle;
 
@@ -317,6 +319,14 @@ int uart_tx(int len,unsigned char *data)
 
     return 0;
 }
+#define DIE(X) do {\
+    fprintf(stderr,__FILE__ ":%d %s: %s\n",__LINE__,X,strerror(errno)); \
+    exit(1);								\
+  } while(0)
+
+char rx_buffer[256];
+ssize_t rx_len = 0;
+
 int uart_rx(int len,unsigned char *data,int timeout_ms)
 {
     int l=len;
@@ -328,15 +338,27 @@ int uart_rx(int len,unsigned char *data,int timeout_ms)
     options.c_cc[VMIN] = 0;
     tcsetattr(serial_handle, TCSANOW, &options);
 
+    if(4 == len) {
+      rx_len = read(serial_handle, rx_buffer, 256);
+      if(rx_len < 1) return rx_len;
+      if(rx_len < 4) DIE("short read");
+      memcpy(data,rx_buffer,4);
+      return 4;
+    }
+    if(len > (rx_len-4)) DIE("short read");
+    memcpy(data,rx_buffer+4,len);
+    return len;
+    
     while(len)
     {
         rread = read(serial_handle, data, len);
 
-        if(!rread)
-        {
-            return 0;
-        } else if(rread < 0) {
-            return -1;
+	switch(rread) {
+	case -1:
+	  DIE("read failed");
+	  break;
+	case 0:
+	  return 0;
         }
         len-=rread;
         data+=len;

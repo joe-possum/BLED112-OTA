@@ -28,6 +28,7 @@
 #include <string.h>
 #include <math.h>
 #include <pthread.h>
+#include "debug.h"
 
 #include <sys/time.h>
 
@@ -272,6 +273,8 @@ int read_message(int timeout_ms)
         return 1;
     }
 
+    //dump_ble_header(&hdr);
+    
     if (hdr.lolen) {
         r = uart_rx(hdr.lolen, data, UART_TIMEOUT);
         if (r <= 0) {
@@ -281,11 +284,12 @@ int read_message(int timeout_ms)
     }
 
     const struct ble_msg *msg = ble_get_msg_hdr(hdr);
+    //dump_ble_msg(msg,data);
 
 #ifdef DEBUG
     print_raw_packet(&hdr, data);
 #endif
-
+    
     if (!msg) {
         printf("ERROR: Unknown message received\n");
         exit(1);
@@ -847,7 +851,8 @@ void ble_evt_hardware_soft_timer(const struct ble_msg_hardware_soft_timer_evt_t 
 int main(int argc, char *argv[]) {
     char *uart_port = "";
     ApplicationProperties_t props;
-
+    //dump_init();
+    
     // Not enough command-line arguments
     if (argc <= CLARG_PORT) {
         usage(argv[0]);

@@ -21,7 +21,7 @@ DEPS := $(SRCS:.c=.d)
 all: $(TARGET)
 
 %.o: %.c
-	$(CC) -O3 -Wall -c -fmessage-length=0 -DPLATFORM_$(PLATFORM) -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o"$@" "$<"
+	$(CC) -g3 -Wall -c -fmessage-length=0 -DPLATFORM_$(PLATFORM) -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o"$@" "$<"
 
 $(TARGET): $(OBJS)
 	@echo 'Building target: $@'
